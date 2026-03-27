@@ -97,8 +97,8 @@ dependencies {
     implementation("io.coil-kt:coil-compose:2.7.0")
 
     // Compose Markdown rendering (replaces Markwon)
-    implementation("com.mikepenz:multiplatform-markdown-renderer-m3:0.34.0")
-    implementation("com.mikepenz:multiplatform-markdown-renderer-coil3:0.34.0")
+    implementation("com.mikepenz:multiplatform-markdown-renderer-m3:0.32.0")
+    implementation("com.mikepenz:multiplatform-markdown-renderer-coil3:0.32.0")
 
     // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
