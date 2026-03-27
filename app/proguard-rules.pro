@@ -14,5 +14,5 @@
 # Compose Markdown
 -keep class com.mikepenz.markdown.** { *; }
 -dontwarn com.mikepenz.markdown.**
--keep class org.commonmark.** { *; }
--dontwarn org.commonmark.**
+-keep class org.intellij.markdown.** { *; }
+-dontwarn org.intellij.markdown.**

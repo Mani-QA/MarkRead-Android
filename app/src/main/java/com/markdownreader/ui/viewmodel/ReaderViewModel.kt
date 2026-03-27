@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.markdownreader.domain.model.AppTheme
 import com.markdownreader.domain.model.FileLoadResult
 import com.markdownreader.domain.model.ReadPosition
+import com.markdownreader.domain.model.ReadingPreferences
 import com.markdownreader.domain.model.RecentFile
 import com.markdownreader.domain.repository.ReadPositionRepository
 import com.markdownreader.domain.repository.RecentFilesRepository
@@ -47,6 +48,9 @@ class ReaderViewModel @Inject constructor(
 
     val currentTheme: StateFlow<AppTheme> = themeRepository.themeFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), AppTheme.LIGHT)
+
+    val readingPreferences: StateFlow<ReadingPreferences> = themeRepository.readingPreferencesFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ReadingPreferences())
 
     val recentFiles: StateFlow<List<RecentFile>> = recentFilesRepository.observeRecentFiles()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -112,6 +116,12 @@ class ReaderViewModel @Inject constructor(
     fun clearRecentFiles() {
         viewModelScope.launch {
             recentFilesRepository.clearAll()
+        }
+    }
+
+    fun updateReadingPreferences(prefs: ReadingPreferences) {
+        viewModelScope.launch {
+            themeRepository.setReadingPreferences(prefs)
         }
     }
 

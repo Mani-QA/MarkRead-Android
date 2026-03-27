@@ -8,6 +8,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.outlined.FolderOpen
 import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.TextFormat
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -30,6 +31,7 @@ import com.markdownreader.ui.components.EmptyFileState
 import com.markdownreader.ui.components.ErrorState
 import com.markdownreader.ui.components.FileTooLargeState
 import com.markdownreader.ui.components.MarkdownContent
+import com.markdownreader.ui.components.ReadingPreferencesSheet
 import com.markdownreader.ui.components.RecentFilesList
 import com.markdownreader.ui.components.ThemeMenu
 import com.markdownreader.ui.viewmodel.ReaderUiState
@@ -45,7 +47,9 @@ fun ReaderScreen(
     val uiState by viewModel.uiState.collectAsState()
     val currentTheme by viewModel.currentTheme.collectAsState()
     val recentFiles by viewModel.recentFiles.collectAsState()
+    val readingPreferences by viewModel.readingPreferences.collectAsState()
     var showAbout by remember { mutableStateOf(false) }
+    var showReadingPrefs by remember { mutableStateOf(false) }
 
     val isDocumentOpen = uiState is ReaderUiState.Success
 
@@ -53,6 +57,14 @@ fun ReaderScreen(
         AboutDialog(
             versionName = versionName,
             onDismiss = { showAbout = false }
+        )
+    }
+
+    if (showReadingPrefs) {
+        ReadingPreferencesSheet(
+            preferences = readingPreferences,
+            onPreferencesChanged = { viewModel.updateReadingPreferences(it) },
+            onDismiss = { showReadingPrefs = false }
         )
     }
 
@@ -83,6 +95,14 @@ fun ReaderScreen(
                     }
                 },
                 actions = {
+                    if (isDocumentOpen) {
+                        IconButton(onClick = { showReadingPrefs = true }) {
+                            Icon(
+                                imageVector = Icons.Outlined.TextFormat,
+                                contentDescription = "Reading settings"
+                            )
+                        }
+                    }
                     if (!isDocumentOpen) {
                         IconButton(onClick = { showAbout = true }) {
                             Icon(
@@ -137,7 +157,8 @@ fun ReaderScreen(
                         initialScrollOffset = state.initialScrollOffset,
                         onScrollPositionChanged = { offset ->
                             viewModel.saveScrollPosition(state.uriString, offset)
-                        }
+                        },
+                        readingPreferences = readingPreferences
                     )
                 }
                 ReaderUiState.Idle -> {

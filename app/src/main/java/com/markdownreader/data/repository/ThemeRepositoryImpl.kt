@@ -2,6 +2,7 @@ package com.markdownreader.data.repository
 
 import com.markdownreader.data.datasource.ThemeDataSource
 import com.markdownreader.domain.model.AppTheme
+import com.markdownreader.domain.model.ReadingPreferences
 import com.markdownreader.domain.repository.ThemeRepository
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
@@ -12,7 +13,14 @@ class ThemeRepositoryImpl @Inject constructor(
 
     override val themeFlow: Flow<AppTheme> = themeDataSource.themeFlow
 
+    override val readingPreferencesFlow: Flow<ReadingPreferences> =
+        themeDataSource.readingPreferencesFlow
+
     override suspend fun setTheme(theme: AppTheme) {
         themeDataSource.saveTheme(theme)
+    }
+
+    override suspend fun setReadingPreferences(prefs: ReadingPreferences) {
+        themeDataSource.saveReadingPreferences(prefs)
     }
 }

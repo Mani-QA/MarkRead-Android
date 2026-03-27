@@ -12,16 +12,19 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import com.mikepenz.markdown.m3.Markdown
 import com.mikepenz.markdown.m3.markdownColor
 import com.mikepenz.markdown.m3.markdownTypography
+import com.markdownreader.domain.model.ReadingPreferences
 
 @Composable
 fun MarkdownContent(
     rawMarkdown: String,
     initialScrollOffset: Int,
     onScrollPositionChanged: (Int) -> Unit,
+    readingPreferences: ReadingPreferences,
     modifier: Modifier = Modifier
 ) {
     val scrollState = rememberScrollState(initial = initialScrollOffset)
@@ -38,23 +41,37 @@ fun MarkdownContent(
         }
     }
 
+    val scale = readingPreferences.fontScale
+    val lineMultiplier = readingPreferences.lineHeightMultiplier
+
+    val textColor = MaterialTheme.colorScheme.onBackground
+    val codeTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+
+    fun TextStyle.scaled(): TextStyle = copy(
+        fontSize = fontSize * scale,
+        lineHeight = fontSize * scale * lineMultiplier,
+        color = textColor
+    )
+
     Markdown(
         content = rawMarkdown,
         colors = markdownColor(
-            text = MaterialTheme.colorScheme.onBackground,
-            codeText = MaterialTheme.colorScheme.onSurfaceVariant,
             codeBackground = MaterialTheme.colorScheme.surfaceVariant,
             dividerColor = MaterialTheme.colorScheme.outlineVariant
         ),
         typography = markdownTypography(
-            h1 = MaterialTheme.typography.headlineLarge,
-            h2 = MaterialTheme.typography.headlineMedium,
-            h3 = MaterialTheme.typography.titleLarge,
-            h4 = MaterialTheme.typography.titleMedium,
-            h5 = MaterialTheme.typography.titleSmall,
-            h6 = MaterialTheme.typography.labelLarge,
-            text = MaterialTheme.typography.bodyLarge,
-            paragraph = MaterialTheme.typography.bodyMedium
+            h1 = MaterialTheme.typography.headlineLarge.scaled(),
+            h2 = MaterialTheme.typography.headlineMedium.scaled(),
+            h3 = MaterialTheme.typography.titleLarge.scaled(),
+            h4 = MaterialTheme.typography.titleMedium.scaled(),
+            h5 = MaterialTheme.typography.titleSmall.scaled(),
+            h6 = MaterialTheme.typography.labelLarge.scaled(),
+            text = MaterialTheme.typography.bodyLarge.scaled(),
+            paragraph = MaterialTheme.typography.bodyMedium.scaled(),
+            code = MaterialTheme.typography.bodySmall.copy(
+                fontSize = MaterialTheme.typography.bodySmall.fontSize * scale,
+                color = codeTextColor
+            )
         ),
         modifier = modifier
             .fillMaxSize()
