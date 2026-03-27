@@ -6,17 +6,18 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.viewModels
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.lifecycle.ViewModelProvider
 import com.markdownreader.ui.screen.ReaderScreen
 import com.markdownreader.ui.theme.MarkdownReaderTheme
 import com.markdownreader.ui.viewmodel.ReaderViewModel
-import com.markdownreader.ui.viewmodel.ReaderViewModelFactory
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
-    private lateinit var viewModel: ReaderViewModel
+    private val viewModel: ReaderViewModel by viewModels()
 
     private val filePickerLauncher = registerForActivityResult(
         ActivityResultContracts.OpenDocument()
@@ -37,13 +38,6 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-
-        val app = application as MarkdownReaderApp
-        viewModel = ViewModelProvider(
-            this,
-            ReaderViewModelFactory(app.container)
-        )[ReaderViewModel::class.java]
-
         handleIncomingIntent()
 
         val versionName = packageManager.getPackageInfo(packageName, 0).versionName ?: "1.0.0"
@@ -54,7 +48,6 @@ class MainActivity : ComponentActivity() {
             MarkdownReaderTheme(appTheme = theme) {
                 ReaderScreen(
                     viewModel = viewModel,
-                    markwon = app.container.markwonInstance,
                     versionName = versionName,
                     onOpenFile = { openFilePicker() }
                 )

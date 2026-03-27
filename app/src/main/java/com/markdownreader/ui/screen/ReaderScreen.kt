@@ -32,14 +32,13 @@ import com.markdownreader.ui.components.FileTooLargeState
 import com.markdownreader.ui.components.MarkdownContent
 import com.markdownreader.ui.components.RecentFilesList
 import com.markdownreader.ui.components.ThemeMenu
+import com.markdownreader.ui.viewmodel.ReaderUiState
 import com.markdownreader.ui.viewmodel.ReaderViewModel
-import io.noties.markwon.Markwon
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ReaderScreen(
     viewModel: ReaderViewModel,
-    markwon: Markwon,
     versionName: String,
     onOpenFile: () -> Unit
 ) {
@@ -47,6 +46,8 @@ fun ReaderScreen(
     val currentTheme by viewModel.currentTheme.collectAsState()
     val recentFiles by viewModel.recentFiles.collectAsState()
     var showAbout by remember { mutableStateOf(false) }
+
+    val isDocumentOpen = uiState is ReaderUiState.Success
 
     if (showAbout) {
         AboutDialog(
@@ -59,14 +60,21 @@ fun ReaderScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Text(
-                        text = if (uiState.hasDocument) uiState.fileName else "MarkRead",
-                        maxLines = 1
-                    )
+                    val title = when (val state = uiState) {
+                        is ReaderUiState.Success -> state.fileName
+                        else -> "MarkRead"
+                    }
+                    Text(text = title, maxLines = 1)
                 },
                 navigationIcon = {
-                    if (uiState.hasDocument) {
-                        IconButton(onClick = { viewModel.clearDocument() }) {
+                    if (isDocumentOpen) {
+                        IconButton(onClick = {
+                            val state = uiState
+                            if (state is ReaderUiState.Success) {
+                                viewModel.saveScrollPosition(state.uriString, 0)
+                            }
+                            viewModel.clearDocument()
+                        }) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                                 contentDescription = "Go back"
@@ -75,7 +83,7 @@ fun ReaderScreen(
                     }
                 },
                 actions = {
-                    if (!uiState.hasDocument) {
+                    if (!isDocumentOpen) {
                         IconButton(onClick = { showAbout = true }) {
                             Icon(
                                 imageVector = Icons.Outlined.Info,
@@ -107,29 +115,32 @@ fun ReaderScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            when {
-                uiState.isLoading -> {
+            when (val state = uiState) {
+                ReaderUiState.Loading -> {
                     CircularProgressIndicator(
                         modifier = Modifier.align(Alignment.Center),
                         color = MaterialTheme.colorScheme.primary
                     )
                 }
-                uiState.errorMessage != null -> {
-                    ErrorState(message = uiState.errorMessage!!)
+                is ReaderUiState.Error -> {
+                    ErrorState(message = state.message)
                 }
-                uiState.isEmpty -> {
+                ReaderUiState.EmptyFile -> {
                     EmptyFileState()
                 }
-                uiState.isTooLarge -> {
+                ReaderUiState.FileTooLarge -> {
                     FileTooLargeState()
                 }
-                uiState.hasDocument && uiState.renderedContent != null -> {
+                is ReaderUiState.Success -> {
                     MarkdownContent(
-                        spanned = uiState.renderedContent!!,
-                        markwon = markwon
+                        rawMarkdown = state.rawMarkdown,
+                        initialScrollOffset = state.initialScrollOffset,
+                        onScrollPositionChanged = { offset ->
+                            viewModel.saveScrollPosition(state.uriString, offset)
+                        }
                     )
                 }
-                else -> {
+                ReaderUiState.Idle -> {
                     RecentFilesList(
                         recentFiles = recentFiles,
                         onFileClick = { uriString ->

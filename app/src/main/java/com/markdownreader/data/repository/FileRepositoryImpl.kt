@@ -5,8 +5,11 @@ import com.markdownreader.data.datasource.FileDataSource
 import com.markdownreader.domain.model.FileLoadResult
 import com.markdownreader.domain.model.MarkdownDocument
 import com.markdownreader.domain.repository.FileRepository
+import javax.inject.Inject
 
-class FileRepositoryImpl(private val fileDataSource: FileDataSource) : FileRepository {
+class FileRepositoryImpl @Inject constructor(
+    private val fileDataSource: FileDataSource
+) : FileRepository {
 
     override suspend fun loadMarkdownFile(uri: Uri): FileLoadResult {
         return try {

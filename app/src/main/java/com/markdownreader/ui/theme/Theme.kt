@@ -1,9 +1,13 @@
 package com.markdownreader.ui.theme
 
+import android.os.Build
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.dynamicDarkColorScheme
+import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalContext
 import com.markdownreader.domain.model.AppTheme
 
 private val LightColorScheme = lightColorScheme(
@@ -50,9 +54,12 @@ fun MarkdownReaderTheme(
     appTheme: AppTheme = AppTheme.LIGHT,
     content: @Composable () -> Unit
 ) {
+    val context = LocalContext.current
+    val supportsDynamic = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+
     val colorScheme = when (appTheme) {
-        AppTheme.LIGHT -> LightColorScheme
-        AppTheme.DARK -> DarkColorScheme
+        AppTheme.LIGHT -> if (supportsDynamic) dynamicLightColorScheme(context) else LightColorScheme
+        AppTheme.DARK -> if (supportsDynamic) dynamicDarkColorScheme(context) else DarkColorScheme
         AppTheme.SEPIA -> SepiaColorScheme
     }
 

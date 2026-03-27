@@ -1,46 +1,61 @@
 package com.markdownreader.ui.components
 
-import android.text.Spanned
-import android.text.method.LinkMovementMethod
-import android.widget.TextView
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.viewinterop.AndroidView
-import io.noties.markwon.Markwon
+import com.mikepenz.markdown.m3.Markdown
+import com.mikepenz.markdown.m3.markdownColor
+import com.mikepenz.markdown.m3.markdownTypography
 
 @Composable
 fun MarkdownContent(
-    spanned: Spanned,
-    markwon: Markwon,
+    rawMarkdown: String,
+    initialScrollOffset: Int,
+    onScrollPositionChanged: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val textColor = MaterialTheme.colorScheme.onBackground.toArgb()
-    val linkColor = MaterialTheme.colorScheme.primary.toArgb()
-    val scrollState = rememberScrollState()
+    val scrollState = rememberScrollState(initial = initialScrollOffset)
 
-    AndroidView(
+    LaunchedEffect(initialScrollOffset) {
+        if (initialScrollOffset > 0) {
+            scrollState.scrollTo(initialScrollOffset)
+        }
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            onScrollPositionChanged(scrollState.value)
+        }
+    }
+
+    Markdown(
+        content = rawMarkdown,
+        colors = markdownColor(
+            text = MaterialTheme.colorScheme.onBackground,
+            codeText = MaterialTheme.colorScheme.onSurfaceVariant,
+            codeBackground = MaterialTheme.colorScheme.surfaceVariant,
+            dividerColor = MaterialTheme.colorScheme.outlineVariant
+        ),
+        typography = markdownTypography(
+            h1 = MaterialTheme.typography.headlineLarge,
+            h2 = MaterialTheme.typography.headlineMedium,
+            h3 = MaterialTheme.typography.titleLarge,
+            h4 = MaterialTheme.typography.titleMedium,
+            h5 = MaterialTheme.typography.titleSmall,
+            h6 = MaterialTheme.typography.labelLarge,
+            text = MaterialTheme.typography.bodyLarge,
+            paragraph = MaterialTheme.typography.bodyMedium
+        ),
         modifier = modifier
             .fillMaxSize()
             .verticalScroll(scrollState)
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        factory = { context ->
-            TextView(context).apply {
-                movementMethod = LinkMovementMethod.getInstance()
-                textSize = 16f
-                setLineSpacing(8f, 1f)
-            }
-        },
-        update = { textView ->
-            textView.setTextColor(textColor)
-            textView.setLinkTextColor(linkColor)
-            markwon.setParsedMarkdown(textView, spanned)
-        }
+            .padding(horizontal = 16.dp, vertical = 12.dp)
     )
 }

@@ -1,62 +1,74 @@
-# Markdown Reader
+# MarkRead
 
-A high-performance Android Markdown reader built with Kotlin and Jetpack Compose. Opens `.md` files from device storage, renders them with full formatting support, and provides a comfortable reading experience across three distinct visual themes.
+A lightweight, high-performance Markdown reader for Android built with Kotlin and Jetpack Compose. Opens `.md` files from device storage, renders them natively in Compose, and provides a comfortable reading experience with Material You theming and three distinct visual modes.
 
 ## Features
 
-- **Markdown Rendering** - Full GFM (GitHub Flavored Markdown) support including headings, bold, italic, strikethrough, tables, task lists, inline HTML, code blocks, links, and images.
-- **Image Loading** - Remote and local images rendered inline via Coil with caching and memory management.
-- **Three Theme Modes** - Light, Dark, and Sepia. Sepia uses `#F4ECD8` background / `#5B4636` text for a warm, paper-like reading experience.
-- **Persistent Preferences** - Theme choice saved via DataStore and restored on app restart.
-- **SAF File Access** - Uses Android's Storage Access Framework for secure, permission-aware file picking with persistable URI grants.
-- **Edge Case Handling** - Graceful UI states for empty files, oversized files (>10 MB cap), permission errors, and general I/O failures.
-- **Background Parsing** - Markdown is parsed on `Dispatchers.Default` via Coroutines so the UI thread stays free during scroll.
-- **Intent Handling** - Registers as a viewer for `text/markdown` MIME types so other apps can open `.md` files directly.
+- **Native Compose Markdown** — Full GFM rendering (headings, bold, italic, strikethrough, tables, task lists, code blocks, links, images) using a pure Compose renderer — no WebView or legacy TextView.
+- **Image Loading** — Remote and local images rendered inline via Coil with caching and memory management.
+- **Material You + Three Theme Modes** — Light and Dark themes use dynamic color extraction from your wallpaper on Android 12+. Sepia mode uses `#F4ECD8` background / `#5B4636` text for a warm, paper-like reading experience.
+- **Recent Files** — Quick access to previously opened files from the home screen, backed by a Room database.
+- **Read Position Memory** — Scroll position is saved per file and restored when you reopen it.
+- **Persistent Preferences** — Theme choice saved via DataStore and restored on app restart.
+- **File Association** — Registers as a handler for `.md` files across all Android file managers, browsers, and share sheets.
+- **SAF File Access** — Uses Android's Storage Access Framework for secure, permission-aware file picking with persistable URI grants.
+- **Edge Case Handling** — Graceful UI states for empty files, oversized files (>10 MB cap), permission errors, and general I/O failures.
+- **Background Processing** — File I/O runs on `Dispatchers.IO` via Coroutines so the UI thread stays free.
+- **About Dialog** — App branding with version info and author link.
 
 ## Architecture
 
-The project follows **Clean Architecture** with three distinct layers:
+The project follows **Clean Architecture** with Dagger Hilt for dependency injection:
 
 ```
-┌──────────────────────────────────────────┐
-│  UI Layer (Jetpack Compose + ViewModel)  │
-│  - ReaderScreen, ThemeMenu, States       │
-│  - ReaderViewModel                       │
-├──────────────────────────────────────────┤
-│  Domain Layer (Pure Kotlin)              │
-│  - Models: AppTheme, MarkdownDocument    │
-│  - Repositories: FileRepository,         │
-│    ThemeRepository (interfaces)          │
-│  - Use Cases: LoadMarkdownFileUseCase,   │
-│    ParseMarkdownUseCase                  │
-├──────────────────────────────────────────┤
-│  Data Layer (Android / IO)               │
-│  - FileDataSource (SAF via ContentResolver)│
-│  - ThemeDataSource (DataStore Preferences)│
-│  - Repository implementations            │
-└──────────────────────────────────────────┘
+┌──────────────────────────────────────────────┐
+│  UI Layer (Jetpack Compose + ViewModel)      │
+│  - ReaderScreen, ThemeMenu, AboutDialog      │
+│  - ReaderViewModel (@HiltViewModel)          │
+│  - Sealed interface ReaderUiState            │
+├──────────────────────────────────────────────┤
+│  Domain Layer (Pure Kotlin)                  │
+│  - Models: AppTheme, MarkdownDocument,       │
+│    RecentFile, ReadPosition, FileLoadResult  │
+│  - Repositories (interfaces)                 │
+│  - Use Cases: LoadMarkdownFileUseCase        │
+├──────────────────────────────────────────────┤
+│  Data Layer (Android / IO)                   │
+│  - Room DB: RecentFileDao, ReadPositionDao   │
+│  - FileDataSource (SAF via ContentResolver)  │
+│  - ThemeDataSource (DataStore Preferences)   │
+│  - Repository implementations                │
+├──────────────────────────────────────────────┤
+│  DI Layer (Dagger Hilt)                      │
+│  - DatabaseModule, DataModule                │
+│  - @HiltAndroidApp, @AndroidEntryPoint       │
+└──────────────────────────────────────────────┘
 ```
 
 ### Key Design Decisions
 
 | Concern | Approach |
 |---|---|
-| Markdown engine | Markwon 4.6 with plugins (tables, strikethrough, task lists, HTML, Coil images) |
-| Image loading | Coil 2.x integrated with Markwon's image plugin |
-| Theme persistence | DataStore Preferences with Flow-based observation |
+| Markdown engine | multiplatform-markdown-renderer-m3 (pure Compose, Material 3 native) |
+| Image loading | Coil 2.x with Compose integration |
+| Theme | Material You dynamic colors (Android 12+) with static fallback + Sepia |
+| State management | Exhaustive sealed interface (`ReaderUiState`) for compile-time safety |
+| Persistence | Room for recent files & read positions; DataStore for theme |
 | File access | Storage Access Framework with `OpenDocument` contract |
-| DI | Manual constructor injection via `AppContainer` (no framework overhead) |
-| Threading | `Dispatchers.IO` for file reads, `Dispatchers.Default` for Markdown parsing |
+| DI | Dagger Hilt with `@HiltViewModel`, `@AndroidEntryPoint` |
+| Threading | `Dispatchers.IO` for file reads, Coroutines throughout |
 
 ## Tech Stack
 
 | Component | Library |
 |---|---|
 | Language | Kotlin 2.0 |
-| UI | Jetpack Compose + Material 3 |
-| Markdown | Markwon 4.6.2 |
+| UI | Jetpack Compose + Material 3 + Material You |
+| Markdown | multiplatform-markdown-renderer 0.27.0 |
 | Images | Coil 2.7.0 |
-| Persistence | DataStore Preferences 1.1.1 |
+| DI | Dagger Hilt 2.53.1 |
+| Database | Room 2.6.1 |
+| Preferences | DataStore Preferences 1.1.1 |
 | Async | Kotlin Coroutines 1.9.0 |
 | Min SDK | 26 (Android 8.0) |
 | Target SDK | 35 (Android 15) |
@@ -65,29 +77,35 @@ The project follows **Clean Architecture** with three distinct layers:
 
 ```
 app/src/main/java/com/markdownreader/
-├── di/                  # Dependency injection container
+├── di/                      # Hilt modules (DatabaseModule, DataModule)
 ├── domain/
-│   ├── model/           # AppTheme, MarkdownDocument, FileLoadResult
-│   ├── repository/      # FileRepository, ThemeRepository interfaces
-│   └── usecase/         # LoadMarkdownFileUseCase, ParseMarkdownUseCase
+│   ├── model/               # AppTheme, MarkdownDocument, RecentFile,
+│   │                        # ReadPosition, FileLoadResult (sealed interface)
+│   ├── repository/          # FileRepository, ThemeRepository,
+│   │                        # RecentFilesRepository, ReadPositionRepository
+│   └── usecase/             # LoadMarkdownFileUseCase
 ├── data/
-│   ├── datasource/      # FileDataSource (SAF), ThemeDataSource (DataStore)
-│   └── repository/      # FileRepositoryImpl, ThemeRepositoryImpl
+│   ├── local/               # Room database, entities, DAOs
+│   ├── datasource/          # FileDataSource (SAF), ThemeDataSource (DataStore)
+│   └── repository/          # All repository implementations
 ├── ui/
-│   ├── theme/           # Color, Theme, Typography definitions
-│   ├── components/      # MarkdownContent, ThemeMenu, EmptyState
-│   ├── screen/          # ReaderScreen
-│   └── viewmodel/       # ReaderViewModel, ReaderViewModelFactory
-├── MainActivity.kt
-└── MarkdownReaderApp.kt
+│   ├── theme/               # Color, Theme (Material You), Typography
+│   ├── components/          # MarkdownContent, ThemeMenu, RecentFilesList,
+│   │                        # AboutDialog, EmptyState
+│   ├── screen/              # ReaderScreen
+│   └── viewmodel/           # ReaderViewModel (sealed interface state)
+├── MainActivity.kt          # @AndroidEntryPoint
+└── MarkdownReaderApp.kt     # @HiltAndroidApp
 ```
 
 ## Building
 
-Open the project in Android Studio and sync Gradle, then run on a device or emulator:
-
 ```bash
+# Debug APK
 ./gradlew assembleDebug
+
+# Release AAB (for Play Store)
+./gradlew bundleRelease
 ```
 
 ## Security
@@ -95,3 +113,4 @@ Open the project in Android Studio and sync Gradle, then run on a device or emul
 - No API keys or secrets are used in this project.
 - File access is scoped through SAF with explicit user consent per file.
 - Persistable URI permissions are acquired so reopening works without re-prompting.
+- Keystore files (`.jks`) are excluded from version control via `.gitignore`.

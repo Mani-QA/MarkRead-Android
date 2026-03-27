@@ -4,8 +4,11 @@ import com.markdownreader.data.datasource.ThemeDataSource
 import com.markdownreader.domain.model.AppTheme
 import com.markdownreader.domain.repository.ThemeRepository
 import kotlinx.coroutines.flow.Flow
+import javax.inject.Inject
 
-class ThemeRepositoryImpl(private val themeDataSource: ThemeDataSource) : ThemeRepository {
+class ThemeRepositoryImpl @Inject constructor(
+    private val themeDataSource: ThemeDataSource
+) : ThemeRepository {
 
     override val themeFlow: Flow<AppTheme> = themeDataSource.themeFlow
 
